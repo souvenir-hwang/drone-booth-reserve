@@ -49,4 +49,17 @@ create policy "bookings_delete_anon"
   using (true);
 
 -- 실시간(Realtime) 구독 활성화: 고객/관리자 화면이 서로의 예약/취소를 즉시 반영하기 위함
-alter publication supabase_realtime add table public.bookings;
+-- 최근 생성된 Supabase 프로젝트는 새 테이블을 supabase_realtime publication에
+-- 자동으로 포함시키므로, 이미 등록되어 있으면 건너뛴다 (재실행 시에도 안전하도록).
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'bookings'
+  ) then
+    alter publication supabase_realtime add table public.bookings;
+  end if;
+end $$;
