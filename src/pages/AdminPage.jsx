@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import AdminLogin from '../components/AdminLogin'
+import DateSelector from '../components/DateSelector'
 import { useBookings } from '../hooks/useBookings'
 import { BOOTHS, slotLabel, todayStr } from '../utils/booking'
 
@@ -56,17 +57,7 @@ export default function AdminPage() {
         </button>
       </header>
 
-      <div className="rounded-lg border border-radar-border bg-radar-panel p-4">
-        <label className="mb-2 block text-sm font-semibold tracking-wide text-radar-cyan">
-          조회할 날짜
-        </label>
-        <input
-          type="date"
-          value={dateStr}
-          onChange={(e) => setDateStr(e.target.value)}
-          className="w-full rounded-md border border-radar-border bg-[#0a0e17] px-3 py-2 font-mono text-slate-100 outline-none focus:border-radar-cyan focus:ring-1 focus:ring-radar-cyan"
-        />
-      </div>
+      <DateSelector value={dateStr} onChange={setDateStr} label="조회할 날짜" />
 
       {loading && <p className="mt-4 text-center text-sm text-slate-400">불러오는 중...</p>}
       {error && (

@@ -7,7 +7,7 @@ function daysInMonth(year, month) {
   return new Date(year, month + 1, 0).getDate()
 }
 
-export default function DateSelector({ value, onChange }) {
+export default function DateSelector({ value, onChange, label = '예약 날짜 선택' }) {
   const [open, setOpen] = useState(false)
   const [viewDate, setViewDate] = useState(() => (value ? parseLocalDate(value) : new Date()))
   const containerRef = useRef(null)
@@ -42,19 +42,49 @@ export default function DateSelector({ value, onChange }) {
     setOpen(false)
   }
 
+  const shiftDay = (delta) => {
+    const base = value ? parseLocalDate(value) : new Date()
+    const next = new Date(base.getFullYear(), base.getMonth(), base.getDate() + delta)
+    onChange(formatDate(next))
+    setViewDate(next)
+  }
+
+  const goPrevDay = () => shiftDay(-1)
+  const goNextDay = () => shiftDay(1)
+
   return (
     <div className="relative rounded-lg border border-radar-border bg-radar-panel p-4" ref={containerRef}>
       <label className="mb-2 block text-sm font-semibold tracking-wide text-radar-cyan">
-        예약 날짜 선택
+        {label}
       </label>
 
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="w-full rounded-md border border-radar-border bg-[#0a0e17] px-3 py-2 text-left font-mono text-slate-100 outline-none focus:border-radar-cyan focus:ring-1 focus:ring-radar-cyan"
-      >
-        {value ? `${value} (${weekdayName(value)}요일)` : '날짜를 선택하세요'}
-      </button>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={goPrevDay}
+          aria-label="이전 날짜"
+          className="shrink-0 rounded-md border border-radar-border bg-[#0a0e17] px-3 py-2 text-slate-300 hover:bg-slate-800"
+        >
+          ‹
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          className="w-full rounded-md border border-radar-border bg-[#0a0e17] px-3 py-2 text-left font-mono text-slate-100 outline-none focus:border-radar-cyan focus:ring-1 focus:ring-radar-cyan"
+        >
+          {value ? `${value} (${weekdayName(value)}요일)` : '날짜를 선택하세요'}
+        </button>
+
+        <button
+          type="button"
+          onClick={goNextDay}
+          aria-label="다음 날짜"
+          className="shrink-0 rounded-md border border-radar-border bg-[#0a0e17] px-3 py-2 text-slate-300 hover:bg-slate-800"
+        >
+          ›
+        </button>
+      </div>
 
       {open && (
         <div className="absolute left-4 right-4 top-full z-40 mt-2 rounded-lg border border-radar-border bg-radar-panel p-3 shadow-xl">
