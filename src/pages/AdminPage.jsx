@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import AdminLogin from '../components/AdminLogin'
 import DateSelector from '../components/DateSelector'
-import { useBookings } from '../hooks/useBookings'
-import { BOOTHS, slotLabel, todayStr } from '../utils/booking'
+import { useBookings, useUpcomingBookings } from '../hooks/useBookings'
+import { BOOTHS, slotLabel, todayStr, weekdayName } from '../utils/booking'
 
 const SESSION_KEY = 'drone_booth_admin_authed'
 
@@ -10,6 +10,11 @@ export default function AdminPage() {
   const [authed, setAuthed] = useState(() => sessionStorage.getItem(SESSION_KEY) === 'true')
   const [dateStr, setDateStr] = useState(todayStr())
   const { bookings, loading, error, cancelBooking } = useBookings(authed ? dateStr : null)
+  const {
+    bookings: upcomingBookings,
+    loading: upcomingLoading,
+    error: upcomingError,
+  } = useUpcomingBookings(authed)
   const [cancelingId, setCancelingId] = useState(null)
   const [actionError, setActionError] = useState('')
 
@@ -40,6 +45,13 @@ export default function AdminPage() {
     return <AdminLogin onSuccess={handleLoginSuccess} />
   }
 
+  // 오늘 이후 예약을 날짜별로 묶어서 "한눈에 보기" 요약을 만든다
+  const upcomingByDate = upcomingBookings.reduce((acc, b) => {
+    ;(acc[b.booking_date] = acc[b.booking_date] || []).push(b)
+    return acc
+  }, {})
+  const upcomingDates = Object.keys(upcomingByDate).sort()
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
       <header className="mb-6 flex items-center justify-between">
@@ -57,7 +69,63 @@ export default function AdminPage() {
         </button>
       </header>
 
-      <DateSelector value={dateStr} onChange={setDateStr} label="조회할 날짜" />
+      <section className="mb-4 rounded-lg border border-radar-border bg-radar-panel p-4">
+        <h2 className="mb-3 text-sm font-semibold tracking-wide text-radar-cyan">
+          예약 현황 한눈에 보기 <span className="font-normal text-slate-500">(오늘 이후)</span>
+        </h2>
+
+        {upcomingLoading && <p className="text-sm text-slate-400">불러오는 중...</p>}
+        {upcomingError && (
+          <p className="rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+            {upcomingError}
+          </p>
+        )}
+        {!upcomingLoading && !upcomingError && upcomingDates.length === 0 && (
+          <p className="text-sm text-slate-500">예정된 예약이 없습니다.</p>
+        )}
+        {!upcomingLoading && !upcomingError && upcomingDates.length > 0 && (
+          <ul className="space-y-2">
+            {upcomingDates.map((d) => {
+              const dayBookings = upcomingByDate[d]
+              return (
+                <li key={d}>
+                  <button
+                    type="button"
+                    onClick={() => setDateStr(d)}
+                    className={`w-full rounded-md border px-3 py-2 text-left transition hover:border-radar-cyan/60 ${
+                      d === dateStr
+                        ? 'border-radar-amber/60 bg-radar-amber/5'
+                        : 'border-radar-border bg-[#0a0e17]'
+                    }`}
+                  >
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="font-mono text-sm text-slate-100">
+                        {d} ({weekdayName(d)})
+                      </span>
+                      <span className="shrink-0 rounded-full border border-radar-cyan/40 px-2 py-0.5 text-xs text-radar-cyan">
+                        {dayBookings.length}건
+                      </span>
+                    </span>
+                    <span className="mt-1 block text-xs text-slate-400">
+                      {BOOTHS.map((booth) => {
+                        const slots = dayBookings
+                          .filter((b) => b.booth === booth.id)
+                          .map((b) => b.start_time.slice(0, 5))
+                        return slots.length > 0 ? `${booth.label}: ${slots.join(', ')}` : null
+                      })
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </span>
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+        <p className="mt-3 text-xs text-slate-500">날짜를 클릭하면 아래에서 상세 내역을 볼 수 있습니다.</p>
+      </section>
+
+      <DateSelector value={dateStr} onChange={setDateStr} label="조회할 날짜" allowPast />
 
       {loading && <p className="mt-4 text-center text-sm text-slate-400">불러오는 중...</p>}
       {error && (

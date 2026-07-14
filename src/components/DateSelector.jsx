@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { formatDate, isBookableDate, parseLocalDate, todayStr, weekdayName } from '../utils/booking'
+import { formatDate, isBookableDate, isPastDate, parseLocalDate, todayStr, weekdayName } from '../utils/booking'
 
 const WEEKDAY_HEADERS = ['일', '월', '화', '수', '목', '금', '토']
 
@@ -7,13 +7,15 @@ function daysInMonth(year, month) {
   return new Date(year, month + 1, 0).getDate()
 }
 
-export default function DateSelector({ value, onChange, label = '예약 날짜 선택' }) {
+// allowPast: 과거 날짜 선택 허용 여부 (관리자 화면은 지난 예약 조회를 위해 허용)
+export default function DateSelector({ value, onChange, label = '예약 날짜 선택', allowPast = false }) {
   const [open, setOpen] = useState(false)
   const [viewDate, setViewDate] = useState(() => (value ? parseLocalDate(value) : new Date()))
   const containerRef = useRef(null)
 
   const bookable = isBookableDate(value)
   const todayDateStr = todayStr()
+  const isPast = !allowPast && isPastDate(value)
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -45,12 +47,16 @@ export default function DateSelector({ value, onChange, label = '예약 날짜 �
   const shiftDay = (delta) => {
     const base = value ? parseLocalDate(value) : new Date()
     const next = new Date(base.getFullYear(), base.getMonth(), base.getDate() + delta)
-    onChange(formatDate(next))
+    const nextStr = formatDate(next)
+    // 과거 날짜 선택이 금지된 경우 오늘(한국 시간 기준) 이전으로는 이동 불가
+    if (!allowPast && nextStr < todayDateStr) return
+    onChange(nextStr)
     setViewDate(next)
   }
 
   const goPrevDay = () => shiftDay(-1)
   const goNextDay = () => shiftDay(1)
+  const prevDisabled = !allowPast && Boolean(value) && value <= todayDateStr
 
   return (
     <div className="relative rounded-lg border border-radar-border bg-radar-panel p-4" ref={containerRef}>
@@ -62,8 +68,9 @@ export default function DateSelector({ value, onChange, label = '예약 날짜 �
         <button
           type="button"
           onClick={goPrevDay}
+          disabled={prevDisabled}
           aria-label="이전 날짜"
-          className="shrink-0 rounded-md border border-radar-border bg-[#0a0e17] px-3 py-2 text-slate-300 hover:bg-slate-800"
+          className="shrink-0 rounded-md border border-radar-border bg-[#0a0e17] px-3 py-2 text-slate-300 hover:bg-slate-800 disabled:cursor-not-allowed disabled:text-slate-700 disabled:hover:bg-transparent"
         >
           ‹
         </button>
@@ -120,8 +127,8 @@ export default function DateSelector({ value, onChange, label = '예약 날짜 �
             {cells.map((day, idx) => {
               if (day === null) return <div key={`empty-${idx}`} />
               const dStr = formatDate(new Date(year, month, day))
-              const isPast = dStr < todayDateStr
-              const isSelectable = isBookableDate(dStr) && !isPast
+              const cellPast = !allowPast && dStr < todayDateStr
+              const isSelectable = isBookableDate(dStr) && !cellPast
               const isSelected = dStr === value
               return (
                 <button
@@ -149,13 +156,19 @@ export default function DateSelector({ value, onChange, label = '예약 날짜 �
         운영 요일: 화요일 · 수요일 · 목요일 (13:00 ~ 17:00)
       </p>
 
-      {value && !bookable && (
+      {value && isPast && (
+        <p className="mt-2 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+          이미 지나간 날짜는 예약할 수 없습니다. 오늘 이후의 화·수·목요일을 선택해주세요.
+        </p>
+      )}
+
+      {value && !isPast && !bookable && (
         <p className="mt-2 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
           {weekdayName(value)}요일은 예약할 수 없습니다. 화·수·목요일 중에서 선택해주세요.
         </p>
       )}
 
-      {value && bookable && (
+      {value && !isPast && bookable && (
         <p className="mt-2 rounded-md border border-radar-amber/40 bg-radar-amber/10 px-3 py-2 text-sm text-radar-amber">
           {value} ({weekdayName(value)}요일) 예약 가능한 시간표를 아래에서 확인하세요.
         </p>

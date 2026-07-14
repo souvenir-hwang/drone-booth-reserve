@@ -3,14 +3,15 @@ import DateSelector from '../components/DateSelector'
 import BoothScheduleGrid from '../components/BoothScheduleGrid'
 import BookingModal from '../components/BookingModal'
 import { useBookings } from '../hooks/useBookings'
-import { isBookableDate, todayStr } from '../utils/booking'
+import { isBookableDate, isPastDate, todayStr } from '../utils/booking'
 
 export default function BookingPage() {
   const [dateStr, setDateStr] = useState(todayStr())
   const [selected, setSelected] = useState(null) // { booth, slot }
   const [toast, setToast] = useState('')
 
-  const bookable = isBookableDate(dateStr)
+  // 화·수·목 요일이면서 지나가지 않은 날짜(한국 시간 기준)만 예약 가능
+  const bookable = isBookableDate(dateStr) && !isPastDate(dateStr)
   const { bookings, loading, error, createBooking } = useBookings(bookable ? dateStr : null)
 
   const handleSelectSlot = (booth, slot) => {

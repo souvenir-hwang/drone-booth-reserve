@@ -40,7 +40,11 @@ drop policy if exists "bookings_insert_anon" on public.bookings;
 create policy "bookings_insert_anon"
   on public.bookings for insert
   to anon
-  with check (extract(dow from booking_date) in (2, 3, 4));
+  with check (
+    extract(dow from booking_date) in (2, 3, 4)
+    -- 대한민국(Asia/Seoul) 시간 기준으로 이미 지나간 날짜는 예약 불가
+    and booking_date >= (now() at time zone 'Asia/Seoul')::date
+  );
 
 drop policy if exists "bookings_delete_anon" on public.bookings;
 create policy "bookings_delete_anon"

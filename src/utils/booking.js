@@ -35,7 +35,15 @@ export function weekdayName(dateStr) {
 }
 
 export function todayStr() {
-  return formatDate(new Date())
+  // 방문자 PC의 시간대와 무관하게 대한민국(Asia/Seoul) 기준 오늘 날짜를 반환
+  // ('en-CA' 로케일은 YYYY-MM-DD 형식을 반환)
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date())
+}
+
+// 대한민국 시간대 기준으로 이미 지나간 날짜인지 확인
+export function isPastDate(dateStr) {
+  if (!dateStr) return false
+  return dateStr < todayStr()
 }
 
 export function formatDate(date) {
