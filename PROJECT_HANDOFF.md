@@ -88,16 +88,19 @@ src/
   components/
     DateSelector.jsx      # 팝업 캘린더 + 이전/다음 화살표 날짜 선택 (allowPast 옵션)
     BoothScheduleGrid.jsx # 시간 x 부스 예약 가능/마감 그리드
-    BookingModal.jsx      # 이름/연락처 입력 예약 모달
+    BookingModal.jsx      # 이름/연락처 입력 + 개인정보 동의 예약 모달
+    PrivacyConsent.jsx    # 개인정보 수집·이용 동의서 문구 + 필수 체크박스
     AdminLogin.jsx        # 관리자 비밀번호 입력
   pages/
     BookingPage.jsx       # 고객 예약 화면
-    AdminPage.jsx         # 관리자 화면 (현황 요약 + 날짜별 조회/취소)
+    AdminPage.jsx         # 관리자 화면 (현황 요약 + 날짜별 조회/취소 + 동의 내역)
   hooks/
     useBookings.js        # 날짜별 조회+Realtime+예약/취소, useUpcomingBookings(현황 요약)
+    useConsents.js        # 저장된 동의 내역 조회(관리자용)
   lib/supabaseClient.js   # Supabase 클라이언트 초기화
+  lib/consent.js          # 동의 내역 저장(saveConsent, upsert) + CONSENT_VERSION
   utils/booking.js        # 부스/시간 상수, 요일·지난날짜 검증(한국시간), 전화번호 검증
-supabase/schema.sql       # DB 스키마 + RLS + Realtime SQL
+supabase/schema.sql       # DB 스키마(bookings, consents) + RLS + Realtime SQL
 .github/workflows/deploy.yml  # GitHub Pages 자동 배포
 .claude/launch.json       # Claude Code 브라우저 미리보기용 dev 서버 설정 (gitignore됨)
 ```
@@ -111,6 +114,8 @@ supabase/schema.sql       # DB 스키마 + RLS + Realtime SQL
 - [x] 하단 관리자 안내 문구(생산자동화그룹 황** 프로, 내선 14162)
 - [x] **지난 날짜 예약 차단**(달력·화살표·시간표·DB 정책 모두, **Asia/Seoul 시간 기준**)
 - [x] 관리자 화면 **"예약 현황 한눈에 보기"**(오늘 이후 예약을 날짜별로 요약, 클릭 시 상세 이동)
+- [x] **개인정보 수집·이용 동의서**(예약 모달에서 필수 동의 → `consents` 테이블 저장,
+      이름+전화번호 동일 시 최신 동의만 유지, 관리자 화면에서 동의 내역 조회)
 - [x] GitHub Actions 자동 배포 워크플로우
 
 ## 9. Claude Code로 작업할 때 참고사항(개인 설정)

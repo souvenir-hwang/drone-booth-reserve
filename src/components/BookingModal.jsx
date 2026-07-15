@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { formatPhone, isValidPhone, slotLabel } from '../utils/booking'
+import PrivacyConsent from './PrivacyConsent'
 
 export default function BookingModal({ booth, slot, dateStr, onConfirm, onClose }) {
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
+  const [agreed, setAgreed] = useState(false)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -19,6 +21,10 @@ export default function BookingModal({ booth, slot, dateStr, onConfirm, onClose 
       setError('올바른 휴대폰 번호를 입력해주세요. (예: 010-1234-5678)')
       return
     }
+    if (!agreed) {
+      setError('개인정보 수집 및 이용에 동의해주세요. (필수)')
+      return
+    }
 
     setSubmitting(true)
     try {
@@ -31,7 +37,7 @@ export default function BookingModal({ booth, slot, dateStr, onConfirm, onClose 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="w-full max-w-sm rounded-lg border border-radar-border bg-radar-panel p-6 shadow-xl">
+      <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg border border-radar-border bg-radar-panel p-6 shadow-xl">
         <h3 className="text-lg font-bold text-radar-cyan">예약 정보 입력</h3>
         <p className="mt-1 text-sm text-slate-400">
           {dateStr} · Booth {booth} · {slotLabel(slot)}
@@ -62,6 +68,8 @@ export default function BookingModal({ booth, slot, dateStr, onConfirm, onClose 
             />
           </div>
 
+          <PrivacyConsent agreed={agreed} onChange={setAgreed} />
+
           {error && (
             <p className="rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
               {error}
@@ -79,7 +87,7 @@ export default function BookingModal({ booth, slot, dateStr, onConfirm, onClose 
             </button>
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || !agreed}
               className="flex-1 rounded-md bg-radar-amber py-2 font-semibold text-radar-bg transition hover:brightness-110 disabled:opacity-60"
             >
               {submitting ? '예약 중...' : '예약 확정'}

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import AdminLogin from '../components/AdminLogin'
 import DateSelector from '../components/DateSelector'
 import { useBookings, useUpcomingBookings } from '../hooks/useBookings'
+import { useConsents } from '../hooks/useConsents'
 import { BOOTHS, slotLabel, todayStr, weekdayName } from '../utils/booking'
 
 const SESSION_KEY = 'drone_booth_admin_authed'
@@ -15,8 +16,14 @@ export default function AdminPage() {
     loading: upcomingLoading,
     error: upcomingError,
   } = useUpcomingBookings(authed)
+  const {
+    consents,
+    loading: consentsLoading,
+    error: consentsError,
+  } = useConsents(authed)
   const [cancelingId, setCancelingId] = useState(null)
   const [actionError, setActionError] = useState('')
+  const [showConsents, setShowConsents] = useState(false)
 
   const handleLoginSuccess = () => {
     sessionStorage.setItem(SESSION_KEY, 'true')
@@ -178,6 +185,56 @@ export default function AdminPage() {
           })}
         </div>
       )}
+
+      <section className="mt-8 rounded-lg border border-radar-border bg-radar-panel p-4">
+        <button
+          type="button"
+          onClick={() => setShowConsents((v) => !v)}
+          className="flex w-full items-center justify-between text-left"
+        >
+          <span className="text-sm font-semibold tracking-wide text-radar-cyan">
+            개인정보 수집·이용 동의 내역{' '}
+            <span className="font-normal text-slate-500">({consents.length}명)</span>
+          </span>
+          <span className="text-slate-400">{showConsents ? '▲' : '▼'}</span>
+        </button>
+
+        {showConsents && (
+          <div className="mt-3">
+            {consentsLoading && <p className="text-sm text-slate-400">불러오는 중...</p>}
+            {consentsError && (
+              <p className="rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+                {consentsError}
+              </p>
+            )}
+            {!consentsLoading && !consentsError && consents.length === 0 && (
+              <p className="text-sm text-slate-500">저장된 동의 내역이 없습니다.</p>
+            )}
+            {!consentsLoading && !consentsError && consents.length > 0 && (
+              <ul className="space-y-2">
+                {consents.map((c) => (
+                  <li
+                    key={c.id}
+                    className="flex items-center justify-between rounded-md border border-radar-border bg-[#0a0e17] px-3 py-2 text-sm"
+                  >
+                    <div>
+                      <p className="text-slate-200">{c.customer_name}</p>
+                      <p className="text-slate-400">{c.customer_phone}</p>
+                    </div>
+                    <div className="text-right text-xs text-slate-500">
+                      <p className="text-radar-cyan">동의함</p>
+                      <p>{new Date(c.agreed_at).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p className="mt-3 text-xs text-slate-500">
+              동일한 이름·전화번호로 재신청하면 가장 최근 동의만 남습니다.
+            </p>
+          </div>
+        )}
+      </section>
 
       <footer className="mt-10 text-center">
         <a href="#" className="text-xs text-slate-500 underline hover:text-slate-300">

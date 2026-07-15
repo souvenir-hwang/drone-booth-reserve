@@ -3,6 +3,7 @@ import DateSelector from '../components/DateSelector'
 import BoothScheduleGrid from '../components/BoothScheduleGrid'
 import BookingModal from '../components/BookingModal'
 import { useBookings } from '../hooks/useBookings'
+import { saveConsent } from '../lib/consent'
 import { isBookableDate, isPastDate, todayStr } from '../utils/booking'
 
 export default function BookingPage() {
@@ -19,7 +20,10 @@ export default function BookingPage() {
   }
 
   const handleConfirm = async ({ name, phone }) => {
+    // 예약을 먼저 확정하고(슬롯 선점 실패 시 여기서 중단), 성공하면 동의 내역을 저장한다.
     await createBooking({ booth: selected.booth, startTime: selected.slot, name, phone })
+    // 이름+전화번호가 같으면 마지막 동의만 남도록 upsert 된다.
+    await saveConsent({ name, phone })
     setSelected(null)
     setToast('예약이 완료되었습니다!')
     setTimeout(() => setToast(''), 3000)

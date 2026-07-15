@@ -51,9 +51,11 @@ supabase/schema.sql # DB 테이블 + RLS 정책 + Realtime 활성화 SQL
 2. 프로젝트가 준비되면 좌측 메뉴 **SQL Editor** 로 이동.
 3. 이 저장소의 [`supabase/schema.sql`](supabase/schema.sql) 내용 전체를 복사해서 붙여넣고 **Run** 실행.
    - `bookings` 테이블 생성
-   - 화/수/목 요일만 허용하는 체크 제약, 중복 예약 방지 유니크 제약
+   - 화/수/목 요일만 허용하는 체크 제약, 중복 예약 방지 유니크 제약, 지난 날짜 예약 차단(Asia/Seoul 기준)
    - Row Level Security 활성화 + anon 역할에 조회/등록/삭제 정책 부여
    - Realtime 발행(publication)에 테이블 추가
+   - `consents` 테이블 생성(개인정보 수집·이용 동의 내역): 이름+전화번호가 같으면
+     마지막 동의만 남도록 유니크 제약 + upsert, anon 역할에 조회/등록/수정 정책 부여
 4. 좌측 메뉴 **Project Settings → API** 에서 다음 두 값을 복사해둡니다.
    - `Project URL` → `VITE_SUPABASE_URL`
    - `anon public` key → `VITE_SUPABASE_ANON_KEY`

@@ -67,3 +67,42 @@ begin
     alter publication supabase_realtime add table public.bookings;
   end if;
 end $$;
+
+-- ---------------------------------------------------------------------------
+-- 개인정보 수집·이용 동의 내역
+-- 예약 신청 시 온라인으로 받은 동의를 저장한다.
+-- 이름+전화번호가 같으면 마지막에 접수된 동의만 남도록 unique 제약 + upsert 사용.
+-- ---------------------------------------------------------------------------
+create table if not exists public.consents (
+  id uuid primary key default gen_random_uuid(),
+  customer_name text not null check (char_length(trim(customer_name)) > 0),
+  customer_phone text not null check (char_length(trim(customer_phone)) > 0),
+  consent_version text not null default 'v1',
+  agreed_at timestamptz not null default now(),
+
+  -- 동일인(이름+전화번호)에 대해서는 한 건만 유지 → 재신청 시 최신 동의로 덮어쓰기
+  constraint consents_unique_person unique (customer_name, customer_phone)
+);
+
+alter table public.consents enable row level security;
+
+-- 고객 화면(익명)에서 동의 저장(upsert)을 하려면 insert + update 권한이 모두 필요하다.
+-- 관리자 화면(동일 anon 키)에서 조회할 수 있도록 select 도 허용한다.
+drop policy if exists "consents_select_anon" on public.consents;
+create policy "consents_select_anon"
+  on public.consents for select
+  to anon
+  using (true);
+
+drop policy if exists "consents_insert_anon" on public.consents;
+create policy "consents_insert_anon"
+  on public.consents for insert
+  to anon
+  with check (true);
+
+drop policy if exists "consents_update_anon" on public.consents;
+create policy "consents_update_anon"
+  on public.consents for update
+  to anon
+  using (true)
+  with check (true);
